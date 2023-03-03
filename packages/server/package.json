@@ -1,0 +1,7 @@
+{
+    "name": "@ttt/server",
+    "version": "1.0.0",
+    "dependencies": {
+        "@ttt/lib": "1.0.0"
+    }
+}

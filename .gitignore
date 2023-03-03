@@ -1,0 +1,12 @@
+.DS_Store
+.thumbs.db
+node_modules
+/build
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.env
+.vscode
+*.rest

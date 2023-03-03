@@ -1,0 +1,14 @@
+{
+    "name": "ttt",
+    "version": "1.0.0",
+    "description": "Tic-Tac-Toe Game",
+    "main": "index.js",
+    "license": "MIT",
+    "private": true,
+    "scripts": {
+        "test": "jest"
+    },
+    "workspaces": [
+        "packages/*"
+    ]
+}
