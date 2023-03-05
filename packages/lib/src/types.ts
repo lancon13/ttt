@@ -1,27 +1,23 @@
-export interface Player {
-    uid: string
-    name: string
-    scores: {
-        w: number
-        l: number
-        t: number
-    }
-    isAI: boolean
+export interface User {
+    uid: string;
+    name: string;
 }
 
 export interface GameState {
-    playerA: Player | undefined
-    playerB: Player | undefined
-    cells: CellState[]
+    player: User | undefined;
+    opponent: User | undefined;
+    cells: CellState[];
+    turn: CellState.PLAYER | CellState.OPPONENT;
+    numInRow: number;
 }
 
 export enum CellState {
     EMPTY = 0,
-    PLAYER_A = 1,
-    PLAYER_B = 2,
+    PLAYER = 1,
+    OPPONENT = 2,
 }
 
 export interface Position {
-    x: number,
-    y: number
+    x: number;
+    y: number;
 }
