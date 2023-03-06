@@ -1,4 +1,4 @@
-import winston from 'winston';
+import winston from 'winston'
 
 export const createLogger = (env: string) => {
     return winston.createLogger({
@@ -10,9 +10,12 @@ export const createLogger = (env: string) => {
                     winston.format.colorize(),
                     winston.format.timestamp(),
                     winston.format.align(),
-                    winston.format.printf((info) => `${info.timestamp} ${info.level}: ${info.message}`)
+                    winston.format.printf(
+                        (info) =>
+                            `${info.timestamp} ${info.level}: ${info.message}`
+                    )
                 ),
             }),
         ],
-    });
-};
+    })
+}

@@ -1,14 +1,14 @@
 export interface User {
-    uid: string;
-    name: string;
+    uid: string
+    name: string
 }
 
 export interface GameState {
-    player: User | undefined;
-    opponent: User | undefined;
-    cells: CellState[];
-    turn: CellState.PLAYER | CellState.OPPONENT;
-    numInRow: number;
+    player: User | undefined
+    opponent: User | undefined
+    cells: CellState[]
+    turn: CellState.PLAYER | CellState.OPPONENT
+    numInRow: number
 }
 
 export enum CellState {
@@ -18,6 +18,6 @@ export enum CellState {
 }
 
 export interface Position {
-    x: number;
-    y: number;
+    x: number
+    y: number
 }

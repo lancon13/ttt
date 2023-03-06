@@ -1,2 +1,3 @@
-export * from './game.ts.bak'
 export * from './types'
+export * from './game'
+export * from './helpers'
