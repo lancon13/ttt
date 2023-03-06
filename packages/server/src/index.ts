@@ -12,7 +12,9 @@ const logger = createLogger(
 
 const app = express()
 const server = createServer(app)
-const io = new SocketIO(server)
+const io = new SocketIO(server, {
+    path: '/ttt-socket'
+})
 const port = process.env.PORT || 3000
 
 // REST
