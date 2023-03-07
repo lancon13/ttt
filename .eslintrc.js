@@ -4,7 +4,12 @@ module.exports = {
         es2021: true,
         node: true,
     },
-    extends: ['eslint:recommended', 'plugin:react/recommended', 'plugin:@typescript-eslint/recommended'],
+    extends: [
+        'eslint:recommended',
+        'plugin:react/recommended',
+        'plugin:@typescript-eslint/recommended',
+        'prettier',
+    ],
     overrides: [],
     parser: '@typescript-eslint/parser',
     parserOptions: {
@@ -12,5 +17,44 @@ module.exports = {
         sourceType: 'module',
     },
     plugins: ['react', '@typescript-eslint'],
-    rules: {},
-};
+    rules: {
+        'no-debugger': 'warn',
+        'no-console': 'warn',
+        'no-unused-expressions': 'warn',
+        'no-empty-function': 'warn',
+        'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+
+        'linebreak-style': ['error', 'unix'],
+        indent: ['error', 4, { SwitchCase: 1, flatTernaryExpressions: true }],
+        semi: ['error', 'never'],
+        quotes: ['warn', 'single'],
+        curly: ['error', 'multi', 'consistent'],
+        'prefer-promise-reject-errors': 'off',
+        'multiline-ternary': ['error', 'never'],
+        'brace-style': ['error', '1tbs', { allowSingleLine: false }],
+        // 'array-element-newline': ['error', { multiline: true, minItems: 3 }],
+        // 'array-bracket-newline': ['error', { multiline: true }],
+        'object-curly-spacing': ['error', 'always'],
+        'no-irregular-whitespace': ['error', { skipComments: true }],
+        'no-trailing-spaces': [
+            'error',
+            { skipBlankLines: true, ignoreComments: true },
+        ],
+
+        '@typescript-eslint/interface-name-prefix': 'off',
+        '@typescript-eslint/explicit-module-boundary-types': 'off',
+        '@typescript-eslint/explicit-function-return-type': 'off',
+        '@typescript-eslint/require-await': 'off',
+        '@typescript-eslint/no-explicit-any': 'off',
+        '@typescript-eslint/no-var-requires': 'off',
+        '@typescript-eslint/indent': ['warn', 4],
+
+        '@typescript-eslint/no-unused-vars': 'off',
+        '@typescript-eslint/no-unsafe-member-access': 'off',
+        '@typescript-eslint/no-unsafe-assignment': 'off',
+        '@typescript-eslint/no-unsafe-return': 'off',
+        '@typescript-eslint/ban-types': 'off',
+
+        'react/react-in-jsx-scope': 'off',
+    },
+}

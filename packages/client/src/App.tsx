@@ -1,53 +1,134 @@
+import { GameState } from '@ttt/lib'
 import { useEffect, useState } from 'react'
-import { Button } from 'react-daisyui'
-import Alert from './components/Alert'
 import Footer from './components/Footer'
 import Header from './components/Header'
 import Hero from './components/Hero'
 import List from './components/List'
+import NewGameModal from './components/NewGameModal'
 import UsernameModal from './components/UsernameModal'
-import { createSocket, useData } from './services'
-import { SystemState, DataState } from './types'
+import { createGameClient, useData } from './services'
+import { ServerData, SystemState } from './types'
+
+const game = createGameClient()
 
 const App = () => {
     // Data
-    const [data, setData] = useData()
+    const [dataState, setDataState] = useData()
     const [systemState, setSystemState] = useState<SystemState>({
+        isStartingNewGame: false,
+        isLoading: false,
+
+        connectionStatus: 'disconnected',
+
         usernameModalVisible: false,
+        newGameModalVisible: false,
     })
+    const [games, setGames] = useState<{ gameId: string; gameState: GameState }[]>([])
 
-    console.log(data)
-
+    // Socket connection
     useEffect(() => {
-        // Socket connection
-        const socket = createSocket()
-        socket.connect()
+        game.connect()
+        game.eventEmitter.on('connect', () => {
+            setSystemState({ ...systemState, connectionStatus: 'connected' })
+        })
+        game.eventEmitter.on('disconnect', () => {
+            setSystemState({ ...systemState, connectionStatus: 'disconnected' })
+        })
+        game.eventEmitter.on('server:data', async (params: ServerData) => {
+            switch (params.type) {
+                case 'newGameCreated':
+                    try {
+                        const games = await game.listGames()
+                        setGames(Array.from(games, ([gameId, gameState]) => ({ gameId, gameState })))
+                    } catch (error) {
+                        console.error(error)
+                    }
+                    break
+            }
+        })
         return () => {
-            socket.disconnect()
+            game.disconnect()
         }
     }, [])
 
-    const newGame = () => {
-        console.log('newGame')
-        if (data.username.trim() === '')
-            setSystemState({ ...systemState, usernameModalVisible: true })
+    // Event handlers
+    const onOpenStartNewGameModal = () => {
+        systemState.isStartingNewGame = true
+        if (dataState.username.trim() === '') systemState.usernameModalVisible = true
+        else systemState.newGameModalVisible = true
+        setSystemState({ ...systemState })
+    }
+    const onStartNewGame = async ({ size, numInRow }: { size: number; numInRow: number }) => {
+        try {
+            const res = await game.newGame({ size, numInRow })
+
+            // Redirect to the new game
+            console.log(res)
+            setSystemState({ ...systemState, newGameModalVisible: false })
+        } catch (error) {
+            console.error(error)
+        }
     }
 
     return (
         <div className="App flex flex-col min-h-screen">
-            <Header username={data.username}></Header>
-            <Hero onStart={() => newGame()}></Hero>
-            <div>{JSON.stringify(data)}</div>
-            <Button color="primary">Click me!</Button>
+            {dataState.username.trim() !== '' ? (
+                <Header
+                    username={dataState.username}
+                    connectionStatus={systemState.connectionStatus}
+                    onAvatarButtonClick={() =>
+                        setSystemState({
+                            ...systemState,
+                            isStartingNewGame: false,
+                            usernameModalVisible: true,
+                        })
+                    }
+                ></Header>
+            ) : (
+                ''
+            )}
+
+            <Hero onStartClick={onOpenStartNewGameModal}></Hero>
+
+            <div>{JSON.stringify(dataState)}</div>
             <div className="grow p-6">
-                <Alert></Alert>
+                {/* <Alert></Alert> */}
+
                 <UsernameModal
                     visible={systemState.usernameModalVisible}
+                    username={dataState.username}
+                    onVisibleChange={(visible: boolean) =>
+                        setSystemState({
+                            ...systemState,
+                            isStartingNewGame: false,
+                            usernameModalVisible: visible,
+                        })
+                    }
+                    onUsernameChange={(username: string) => {
+                        setDataState({ ...dataState, username })
+                        setSystemState({
+                            ...systemState,
+                            isStartingNewGame: false,
+                            usernameModalVisible: false,
+                            newGameModalVisible: systemState.isStartingNewGame,
+                        })
+                    }}
                 ></UsernameModal>
 
-                <List></List>
+                <NewGameModal
+                    visible={systemState.newGameModalVisible}
+                    onVisibleChange={(visible: boolean) =>
+                        setSystemState({
+                            ...systemState,
+                            newGameModalVisible: visible,
+                        })
+                    }
+                    onStartNewGame={onStartNewGame}
+                ></NewGameModal>
+
+                {/* <List></List> */}
+                <div>{JSON.stringify(games)}</div>
             </div>
-            <div>Hello World</div>
             <Footer></Footer>
         </div>
     )

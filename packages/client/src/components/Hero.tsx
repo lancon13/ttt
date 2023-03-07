@@ -1,10 +1,10 @@
 import React from 'react'
 
 export interface HeroProps {
-    onStart: () => void
+    onStartClick: () => void
 }
 
-const Hero = ({ onStart }: HeroProps) => {
+const Hero = ({ onStartClick }: HeroProps) => {
     return (
         <div className="hero bg-base-200">
             <div className="hero-content text-center">
@@ -17,7 +17,7 @@ const Hero = ({ onStart }: HeroProps) => {
                     {/* <div></div> */}
                     <button
                         className="btn btn-primary"
-                        onClick={() => onStart()}
+                        onClick={onStartClick}
                     >
                         New Game
                     </button>
