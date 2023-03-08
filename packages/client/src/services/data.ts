@@ -6,8 +6,10 @@ export const useData = () => {
     return useLocalStorage<DataState>(
         'ttt-data',
         {
-            userId: uuid(),
-            username: '',
+            user: {
+                uid: uuid(),
+                name: ''
+            }
         },
         {
             serializer: (obj: unknown) => {

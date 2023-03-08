@@ -75,11 +75,11 @@ export const getNextMove = ({
     isMax: boolean
 }): { score: number; index: number } => {
     if (
-        !!findWinningIndexesCombination(CellState.PLAYER, cells, size, numInRow)
+        findWinningIndexesCombination(CellState.PLAYER, cells, size, numInRow)
     )
         return { score: 1, index }
     else if (
-        !!findWinningIndexesCombination(
+        findWinningIndexesCombination(
             CellState.OPPONENT,
             cells,
             size,

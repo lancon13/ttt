@@ -1,21 +1,21 @@
-import { Avatar, Badge, Button, Indicator, Tooltip } from 'react-daisyui'
+import { Avatar, Badge, Button, Tooltip } from 'react-daisyui'
 import { ConnectionStatus } from '../types'
 
 export interface AvatarProps {
-    username: string
+    userName: string
     connectionStatus: ConnectionStatus
     onClick: () => void
 }
 
-const AvatarButton = ({ username, onClick, connectionStatus }: AvatarProps) => {
+const AvatarButton = ({ userName, onClick, connectionStatus }: AvatarProps) => {
     const connectionStatusMessage = (() => {
         switch (connectionStatus) {
             case 'connected':
-                return `${username} | Connected`
+                return `${userName} | Connected`
             case 'disconnected':
-                return `${username} | Disconnected`
+                return `${userName} | Disconnected`
             case 'connecting':
-                return `${username} | Connecting`
+                return `${userName} | Connecting`
         }
     })()
 
@@ -34,7 +34,7 @@ const AvatarButton = ({ username, onClick, connectionStatus }: AvatarProps) => {
         <div>
             <Tooltip message={connectionStatusMessage} position="left">
                 <Button onClick={onClick} shape="circle" color="primary">
-                    <Avatar letters={username ? username.substring(0, 1) : ''} shape="circle" size="xs"></Avatar>
+                    <Avatar letters={userName ? userName.substring(0, 1) : ''} shape="circle" size="xs"></Avatar>
                 </Button>
             </Tooltip>
             <Badge color={connectionStatusColor} size="sm" className="top-2 right-2 absolute"></Badge>

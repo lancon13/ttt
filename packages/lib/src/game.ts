@@ -45,11 +45,11 @@ export class Game {
     get player(): User | undefined {
         return this._player
     }
-    get opponent(): User | undefined {
-        return this._opponent
-    }
     set player(player: User | undefined) {
         this._player = player
+    }
+    get opponent(): User | undefined {
+        return this._opponent
     }
     set opponent(opponent: User | undefined) {
         this._opponent = opponent
@@ -78,12 +78,8 @@ export class Game {
         const size = gameState.cells.length ** 0.5
         if (size > 1 && size % 1 === 0) {
             this._cells = [...gameState.cells]
-            this._player = gameState.player
-                ? { ...gameState.player }
-                : undefined
-            this._opponent = gameState.opponent
-                ? { ...gameState.opponent }
-                : undefined
+            this._player = gameState.player ? { ...gameState.player } : undefined
+            this._opponent = gameState.opponent ? { ...gameState.opponent } : undefined
             this._turn = gameState.turn
             this._numInRow = gameState.numInRow
         }

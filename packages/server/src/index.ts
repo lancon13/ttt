@@ -1,11 +1,12 @@
+import { User } from '@ttt/lib'
 import dotenv from 'dotenv'
 import express from 'express'
 import { createServer } from 'http'
 import path from 'path'
 import { Server as SocketIO, Socket } from 'socket.io'
-import { listGames, newGame } from './game'
+import { getGame, joinGame, listGames, listUsers, moveGame, newGame, quitGame, registerUser, unregisterUser } from './game'
 import { createLogger } from './logger'
-import { ListGameClientData, NewGameClientData } from './types'
+import { ClientData, GetGameClientData, JoinGameClientData, MoveGameClientData, NewGameClientData, QuitGameClientData } from './types'
 dotenv.config()
 
 const logger = createLogger(process.env.NODE_ENV !== 'production' ? 'DEV' : 'PROD')
@@ -25,48 +26,117 @@ app.use(express.static(path.join(__dirname, 'public')))
 
 // Socket IO
 io.on('connection', (socket: Socket) => {
-    logger.debug(`Socket connection ${socket.id}`)
+    const user = (() => {
+        try {
+            return JSON.parse(socket.handshake.query.user as string) as unknown as User
+        } catch (error) {
+            return { uid: '', name: '' }
+        }
+    })()
+    logger.debug(`Socket connection "${socket.id}" with user "${user?.uid}:${user?.name}"`)
+    registerUser(user)
 
     socket.on('disconnect', () => {
-        logger.debug(`Socket disconnect ${socket.id}`)
+        unregisterUser(user)
+        logger.debug(`Socket disconnect "${socket.id}" with user "${user?.uid}:${user?.name}"`)
     })
 
     // Handle the message event from
-    socket.on(
-        'client:data',
-        ({ type, params }: NewGameClientData | ListGameClientData, callback: (_error: Error | null, _params?: unknown) => void) => {
-            switch (type) {
-                case 'newGame':
-                    newGame(params)
-                        .then((res) => {
-                            callback(null, res)
-                            logger.debug(`New Game "${res.gameId}" created successfully`)
-                            io.emit('server:data', {
-                                type: 'newGameCreated',
-                                params: { gameId: res.gameId },
-                            })
-                        })
-                        .catch((error) => {
-                            callback(error)
-                        })
-                    return
+    socket.on('client:data', ({ type, params }: ClientData, callback: (_error: Error | null, _params?: unknown) => void) => {
+        switch (type) {
+            case 'joinGame':
+                {
+                    const { gameId, asPlayer } = params as JoinGameClientData['params']
+                    joinGame(gameId, user, asPlayer)
+                    const gameState = getGame(gameId)
+                    callback(null, gameState)
+                    logger.debug(`${user.uid}:${user.name} Join Game "${gameId}" as ${asPlayer ? 'PLAYER' : 'OPPONENT'} successfully`)
 
-                case 'listGames':
-                    listGames(params)
-                        .then((res) => {
-                            callback(null, res)
-                        })
-                        .catch((error) => {
-                            callback(error)
-                        })
-                    return
+                    // Game Broadcast
+                    socket.join(gameId)
+                    io.emit('server:data', {
+                        type: 'gameJoined',
+                        params: { gameId },
+                    })
+                }
+                return
 
-                default:
-                    callback(new Error(`Invalid data type "${type}"`))
-                    return
-            }
+            case 'quitGame':
+                {
+                    const { gameId } = params as QuitGameClientData['params']
+                    quitGame(gameId, user)
+                    callback(null)
+                    logger.debug(`${user.uid}:${user.name} Quit Game "${gameId}" successfully`)
+
+                    // Broadcast
+                    socket.leave(gameId)
+                    io.emit('server:data', {
+                        type: 'gameQuitted',
+                        params: { gameId },
+                    })
+                }
+                return
+
+            case 'listUsers':
+                {
+                    callback(null, listUsers())
+                }
+                return
+
+            case 'moveGame':
+                {
+                    const { gameId, position } = params as MoveGameClientData['params']
+                    moveGame(gameId, user, position)
+                    const gameState = getGame(gameId)
+                    callback(null, gameState)
+
+                    // Game Broadcast
+                    socket.to(gameId).emit('game:data', {
+                        type: 'gameMoved',
+                        params: {
+                            gameState,
+                        },
+                    })
+                    io.emit('server:data', {
+                        type: 'gameMoved',
+                        params: { gameId },
+                    })
+                }
+                return
+
+            case 'newGame':
+                {
+                    const gameId = newGame(params as NewGameClientData['params'])
+                    callback(null, gameId)
+                    logger.debug(`New Game "${gameId}" created successfully`)
+
+                    // Broadcast
+                    io.emit('server:data', {
+                        type: 'newGameCreated',
+                        params: { gameId },
+                    })
+                }
+                return
+
+            case 'getGame':
+                {
+                    const { gameId } = params as GetGameClientData['params']
+                    const gameState = getGame(gameId)
+                    callback(null, gameState)
+                }
+                return
+
+            case 'listGames':
+                {
+                    callback(null, listGames())
+                }
+                return
+
+            default:
+                callback(new Error(`Invalid data type "${type}"`))
+                return
         }
-    )
+    })
 })
 
 // Server

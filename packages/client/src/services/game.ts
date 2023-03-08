@@ -1,4 +1,4 @@
-import { CellState, GameState } from '@ttt/lib'
+import { CellState, GameState, User } from '@ttt/lib'
 import { EventEmitter } from 'eventemitter3'
 import { io, Socket } from 'socket.io-client'
 import { ServerData } from '../types'
@@ -6,18 +6,45 @@ import { ServerData } from '../types'
 export const createGameClient = () => {
     const eventEmitter = new EventEmitter()
     let socket: Socket | undefined
-    const connect = () => {
+
+    const connect = (user: User) => {
         if (socket) disconnect()
         socket = io({
             path: '/ttt-socket',
+            query: {
+                user: JSON.stringify(user),
+            },
         })
-        socket.on('connect', (...args) => eventEmitter.emit('connect', ...args))
-        socket.on('disconnect', (...args) => eventEmitter.emit('disconnect', ...args))
+        socket.on('connect', async (...args) => {
+            eventEmitter.emit('connect', ...args)
+            try {
+                eventEmitter.emit('listGames', await listGames())
+            } catch (error) {
+                eventEmitter.emit('error', error)
+            }
+        })
+        socket.on('disconnect', async (...args) => {
+            eventEmitter.emit('disconnect', ...args)
+        })
         socket.on('connect_error', (...args) => eventEmitter.emit('connect_error', ...args))
-        socket.on('server:data', (params: ServerData) => {
-            eventEmitter.emit('server:data', params)
+        socket.on('server:data', async ({ type, params }: ServerData) => {
+            eventEmitter.emit('server:data', { type, params })
+            try {
+                switch (type) {
+                    case 'gameCreated':
+                    case 'gameMoved':
+                    case 'gameJoined':
+                    case 'gameQuitted':
+                    {
+                        eventEmitter.emit('listGames', await listGames())
+                    }
+                }
+            } catch (error) {
+                eventEmitter.emit('error', error)
+            }
         })
     }
+
     const disconnect = () => {
         if (socket) {
             eventEmitter.removeAllListeners()
@@ -27,7 +54,7 @@ export const createGameClient = () => {
         socket = undefined
     }
 
-    const newGame = async ({ size, numInRow }: { size: number; numInRow: number }): Promise<{ gameId: string }> => {
+    const newGame = async ({ size, numInRow }: { size: number; numInRow: number }): Promise<string> => {
         return new Promise((resolve, reject) => {
             if (!socket || !socket.connected) return reject(new Error('Connection is not established yet.'))
             socket.emit(
@@ -39,22 +66,31 @@ export const createGameClient = () => {
                         numInRow,
                     },
                 },
-                (error: Error | null, { gameId }: { gameId: string }) => {
+                (error: Error | null, gameId: string) => {
                     if (error) reject(error)
-                    else resolve({ gameId })
+                    else resolve(gameId)
                 }
             )
         })
     }
 
-    const getGame = async ({ gameId }: { gameId: string }): Promise<GameState> => {
-        return {
-            cells: [],
-            numInRow: 0,
-            turn: CellState.PLAYER,
-            player: undefined,
-            opponent: undefined,
-        }
+    const getGame = async (gameId: string): Promise<GameState> => {
+        return new Promise((resolve, reject) => {
+            if (!socket || !socket.connected) return reject(new Error('Connection is not established yet.'))
+            socket.emit(
+                'client:data',
+                {
+                    type: 'getGame',
+                    params: {
+                        gameId,
+                    },
+                },
+                (error: Error | null, gameState: GameState) => {
+                    if (error) reject(error)
+                    else resolve(gameState)
+                }
+            )
+        })
     }
 
     const listGames = async (): Promise<Map<string, GameState>> => {
@@ -66,13 +102,57 @@ export const createGameClient = () => {
                     type: 'listGames',
                     params: {},
                 },
-                (error: Error | null, games: { [key: string]: GameState }) => {
+                (error: Error | null, games: { gameId: string; gameState: GameState }[]) => {
                     if (error) reject(error)
-                    else resolve(new Map(Object.entries(games)))
+                    else
+                        resolve(
+                            games.reduce((gamesMap, game) => {
+                                gamesMap.set(game.gameId, game.gameState)
+                                return gamesMap
+                            }, new Map())
+                        )
                 }
             )
         })
-        return new Map()
+    }
+
+    const joinGame = async ({ gameId, asPlayer }: { gameId: string; asPlayer: boolean }): Promise<GameState> => {
+        return new Promise((resolve, reject) => {
+            if (!socket || !socket.connected) return reject(new Error('Connection is not established yet.'))
+            socket.emit(
+                'client:data',
+                {
+                    type: 'joinGame',
+                    params: {
+                        gameId,
+                        asPlayer,
+                    },
+                },
+                (error: Error | null, gameState: GameState) => {
+                    if (error) reject(error)
+                    else resolve(gameState)
+                }
+            )
+        })
+    }
+
+    const quitGame = async ({ gameId }: { gameId: string }): Promise<void> => {
+        return new Promise((resolve, reject) => {
+            if (!socket || !socket.connected) return reject(new Error('Connection is not established yet.'))
+            socket.emit(
+                'client:data',
+                {
+                    type: 'quitGame',
+                    params: {
+                        gameId,
+                    },
+                },
+                (error: Error | null) => {
+                    if (error) reject(error)
+                    else resolve()
+                }
+            )
+        })
     }
 
     return {
@@ -83,5 +163,8 @@ export const createGameClient = () => {
         newGame,
         getGame,
         listGames,
+
+        joinGame,
+        quitGame,
     }
 }

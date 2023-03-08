@@ -4,30 +4,24 @@ import CloseButton from './CloseButton'
 
 export interface NewGameModalProps {
     visible: boolean
-    onVisibleChange: (value: boolean) => void
-    onStartNewGame: (params: { size: number; numInRow: number }) => void
+    onVisibleChange: (_visible: boolean) => void
+    onCreateNewGameSubmit: (_params: { size: number; numInRow: number }) => void
 }
 
-const NewGameModal = ({
-    visible,
-    onVisibleChange,
-    onStartNewGame,
-}: NewGameModalProps) => {
+const NewGameModal = ({ visible, onVisibleChange, onCreateNewGameSubmit }: NewGameModalProps) => {
     const [currentSize, setCurrentSize] = useState(3)
     const [currentNumInRow, setCurrentNumInRow] = useState(3)
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        onStartNewGame({ size: currentSize, numInRow: currentNumInRow })
+        onCreateNewGameSubmit({ size: currentSize, numInRow: currentNumInRow })
     }
 
     return (
         <Modal open={visible}>
             <Modal.Header className="font-bold flex items-center">
                 <div className="grow">New Game</div>
-                <CloseButton
-                    onClick={() => onVisibleChange(false)}
-                ></CloseButton>
+                <CloseButton onClick={() => onVisibleChange(false)}></CloseButton>
             </Modal.Header>
 
             <Form onSubmit={onSubmit}>
@@ -45,34 +39,20 @@ const NewGameModal = ({
                                 max="10"
                                 value={currentSize}
                                 onChange={(event) => {
-                                    setCurrentSize(
-                                        parseInt(event.target.value, 10)
-                                    )
-                                    setCurrentNumInRow(
-                                        Math.min(
-                                            parseInt(event.target.value, 10),
-                                            currentNumInRow
-                                        )
-                                    )
+                                    setCurrentSize(parseInt(event.target.value, 10))
+                                    setCurrentNumInRow(Math.min(parseInt(event.target.value, 10), currentNumInRow))
                                 }}
                             ></Range>
 
                             <Divider></Divider>
 
-                            <Form.Label title="Number In Row To Win">
-                                {currentNumInRow}
-                            </Form.Label>
+                            <Form.Label title="Number In Row To Win">{currentNumInRow}</Form.Label>
                             <Range
                                 min="3"
                                 max="10"
                                 value={currentNumInRow}
                                 onChange={(event) => {
-                                    setCurrentNumInRow(
-                                        Math.min(
-                                            currentSize,
-                                            parseInt(event.target.value, 10)
-                                        )
-                                    )
+                                    setCurrentNumInRow(Math.min(currentSize, parseInt(event.target.value, 10)))
                                 }}
                             ></Range>
                         </div>

@@ -1,3 +1,5 @@
+import { User } from '@ttt/lib'
+
 export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting'
 
 export interface SystemState {
@@ -6,16 +8,15 @@ export interface SystemState {
 
     connectionStatus: ConnectionStatus
 
-    usernameModalVisible: boolean
+    userModalVisible: boolean
     newGameModalVisible: boolean
 }
 
 export interface DataState {
-    userId: string
-    username: string
+    user: User
 }
 
 export interface ServerData {
     type: string
-    params: unknown
+    params: { [key: string]: unknown }
 }
