@@ -45,9 +45,9 @@ export const findWinningIndexesCombination = (target, cells, size, numInRow) => 
     });
 };
 export const getNextMove = ({ index, cells, size, numInRow, isMax, }) => {
-    if (!!findWinningIndexesCombination(CellState.PLAYER, cells, size, numInRow))
+    if (findWinningIndexesCombination(CellState.PLAYER, cells, size, numInRow))
         return { score: 1, index };
-    else if (!!findWinningIndexesCombination(CellState.OPPONENT, cells, size, numInRow))
+    else if (findWinningIndexesCombination(CellState.OPPONENT, cells, size, numInRow))
         return { score: -1, index };
     const emptyCells = listEmptyCellIndexes(cells);
     if (emptyCells.length === 0)

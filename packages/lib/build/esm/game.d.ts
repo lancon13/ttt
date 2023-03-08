@@ -17,12 +17,13 @@ export declare class Game {
     get turn(): CellState.PLAYER | CellState.OPPONENT;
     set turn(turn: CellState.PLAYER | CellState.OPPONENT);
     get player(): User | undefined;
-    get opponent(): User | undefined;
     set player(player: User | undefined);
+    get opponent(): User | undefined;
     set opponent(opponent: User | undefined);
     clear(turn?: CellState.PLAYER | CellState.OPPONENT): void;
     getAt(pos: Position): CellState;
     setAt(pos: Position, cellState: CellState): void;
     export(): GameState;
     import(gameState: GameState): void;
+    static import(gameState: GameState): Game;
 }

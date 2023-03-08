@@ -34,8 +34,7 @@ export const createGameClient = () => {
                     case 'gameCreated':
                     case 'gameMoved':
                     case 'gameJoined':
-                    case 'gameQuitted':
-                    {
+                    case 'gameQuitted': {
                         eventEmitter.emit('listGames', await listGames())
                     }
                 }
@@ -136,7 +135,7 @@ export const createGameClient = () => {
         })
     }
 
-    const quitGame = async ({ gameId }: { gameId: string }): Promise<void> => {
+    const quitGame = async ({ gameId, asPlayer }: { gameId: string; asPlayer: boolean }): Promise<void> => {
         return new Promise((resolve, reject) => {
             if (!socket || !socket.connected) return reject(new Error('Connection is not established yet.'))
             socket.emit(
@@ -145,6 +144,7 @@ export const createGameClient = () => {
                     type: 'quitGame',
                     params: {
                         gameId,
+                        asPlayer
                     },
                 },
                 (error: Error | null) => {

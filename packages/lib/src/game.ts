@@ -84,4 +84,9 @@ export class Game {
             this._numInRow = gameState.numInRow
         }
     }
+    static import(gameState: GameState): Game {
+        const game = new Game()
+        game.import(gameState)
+        return game
+    }
 }

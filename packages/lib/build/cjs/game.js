@@ -39,11 +39,11 @@ class Game {
     get player() {
         return this._player;
     }
-    get opponent() {
-        return this._opponent;
-    }
     set player(player) {
         this._player = player;
+    }
+    get opponent() {
+        return this._opponent;
     }
     set opponent(opponent) {
         this._opponent = opponent;
@@ -71,15 +71,16 @@ class Game {
         const size = gameState.cells.length ** 0.5;
         if (size > 1 && size % 1 === 0) {
             this._cells = [...gameState.cells];
-            this._player = gameState.player
-                ? { ...gameState.player }
-                : undefined;
-            this._opponent = gameState.opponent
-                ? { ...gameState.opponent }
-                : undefined;
+            this._player = gameState.player ? { ...gameState.player } : undefined;
+            this._opponent = gameState.opponent ? { ...gameState.opponent } : undefined;
             this._turn = gameState.turn;
             this._numInRow = gameState.numInRow;
         }
+    }
+    static import(gameState) {
+        const game = new Game();
+        game.import(gameState);
+        return game;
     }
 }
 exports.Game = Game;

@@ -1,6 +1,9 @@
-import { GameState } from '@ttt/lib'
+import { Game, GameState } from '@ttt/lib'
 import { useEffect, useState } from 'react'
+import { Card } from 'react-daisyui'
+import EmptyGameList from './components/EmptyGameList'
 import Footer from './components/Footer'
+import GameCard from './components/GameCard'
 import Header from './components/Header'
 import Hero from './components/Hero'
 import NewGameModal from './components/NewGameModal'
@@ -23,8 +26,8 @@ const App = () => {
         userModalVisible: false,
         newGameModalVisible: false,
     })
-    const [games, setGames] = useState<{ gameId: string; gameState: GameState }[]>([])
-    const [currentGame, setCurrentGame] = useState<{ gameId: string; gameState: GameState } | undefined>(undefined)
+    const [games, setGames] = useState<{ gameId: string; game: Game }[]>([])
+    const [currentGame, setCurrentGame] = useState<{ gameId: string; game: Game; asPlayer: boolean } | undefined>(undefined)
 
     // Socket connection
     useEffect(() => {
@@ -36,7 +39,14 @@ const App = () => {
             setSystemState({ ...systemState, connectionStatus: 'disconnected' })
         })
         game.eventEmitter.on('listGames', (games: Map<string, GameState>) => {
-            setGames(Array.from(games, ([gameId, gameState]) => ({ gameId, gameState })))
+            setGames(
+                Array.from(games, ([gameId, gameState]) => {
+                    return {
+                        gameId,
+                        game: Game.import(gameState),
+                    }
+                })
+            )
         })
         game.eventEmitter.on('error', (error: Error) => {
             console.error(error)
@@ -74,7 +84,7 @@ const App = () => {
         try {
             const gameId = await game.newGame({ size, numInRow })
             const gameState = await game.joinGame({ gameId, asPlayer: true })
-            setCurrentGame({ gameId, gameState })
+            setCurrentGame({ gameId, game: Game.import(gameState), asPlayer: true })
             setSystemState({ ...systemState, newGameModalVisible: false })
         } catch (error) {
             game.eventEmitter.emit('error', error)
@@ -82,11 +92,19 @@ const App = () => {
     }
     const onQuitGameSubmit = async () => {
         try {
-            if (currentGame) await game.quitGame({ gameId: currentGame?.gameId || '' })
+            if (currentGame) await game.quitGame({ gameId: currentGame?.gameId || '', asPlayer: currentGame?.asPlayer })
             setCurrentGame(undefined)
         } catch (error) {
             game.eventEmitter.emit('error', error)
         }
+    }
+    const onJoinAsPlayerButtonClick = async (gameId: string) => {
+        const gameState = await game.joinGame({ gameId, asPlayer: true })
+        setCurrentGame({ gameId, game: Game.import(gameState), asPlayer: true })
+    }
+    const onJoinAsOpponentButtonClick = async (gameId: string) => {
+        const gameState = await game.joinGame({ gameId, asPlayer: false })
+        setCurrentGame({ gameId, game: Game.import(gameState), asPlayer: false })
     }
 
     return (
@@ -102,8 +120,6 @@ const App = () => {
             )}
 
             <Hero onStartClick={onStartClick}></Hero>
-
-            <div>{JSON.stringify(dataState)}</div>
             <div className="grow p-6">
                 {/* <Alert></Alert> */}
 
@@ -133,13 +149,21 @@ const App = () => {
 
                 <PlayGameModal game={currentGame} onQuitGameSubmit={onQuitGameSubmit}></PlayGameModal>
 
-                {/* <List></List> */}
-                <br />
-                <ul>
-                    {games.map((game, index) => {
-                        return <li key={index}>{JSON.stringify(game)}</li>
-                    })}
-                </ul>
+                {games.length === 0 ? (
+                    <EmptyGameList></EmptyGameList>
+                ) : (
+                    games.map(({ gameId, game }) => {
+                        return (
+                            <GameCard
+                                key={gameId}
+                                gameId={gameId}
+                                game={game}
+                                onJoinAsOpponentButtonClick={() => onJoinAsOpponentButtonClick(gameId)}
+                                onJoinAsPlayerButtonClick={() => onJoinAsPlayerButtonClick(gameId)}
+                            ></GameCard>
+                        )
+                    })
+                )}
             </div>
             <Footer></Footer>
         </div>

@@ -21,12 +21,17 @@ export const joinGame = (gameId: string, user: User, asPlayer: boolean) => {
     if (game) game[asPlayer ? 'player' : 'opponent'] = user
 }
 
-export const quitGame = (gameId: string, user: User) => {
+export const quitGame = (gameId: string, user: User, asPlayer?: boolean) => {
     const game = games.get(gameId)
-    if (game) {
-        game.player = game.player?.uid == user.uid ? undefined : game.player
-        game.opponent = game.opponent?.uid == user.uid ? undefined : game.opponent
-    }
+    if (game)
+        if (typeof asPlayer === 'undefined') {
+            game.player = game.player?.uid == user.uid ? undefined : game.player
+            game.opponent = game.opponent?.uid == user.uid ? undefined : game.opponent
+        } else if (asPlayer) {
+            game.player = undefined
+        } else if (!asPlayer) {
+            game.opponent = undefined
+        }
 }
 
 export const quiteGames = (user: User) => {

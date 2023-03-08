@@ -53,9 +53,9 @@ const findWinningIndexesCombination = (target, cells, size, numInRow) => {
 };
 exports.findWinningIndexesCombination = findWinningIndexesCombination;
 const getNextMove = ({ index, cells, size, numInRow, isMax, }) => {
-    if (!!(0, exports.findWinningIndexesCombination)(types_1.CellState.PLAYER, cells, size, numInRow))
+    if ((0, exports.findWinningIndexesCombination)(types_1.CellState.PLAYER, cells, size, numInRow))
         return { score: 1, index };
-    else if (!!(0, exports.findWinningIndexesCombination)(types_1.CellState.OPPONENT, cells, size, numInRow))
+    else if ((0, exports.findWinningIndexesCombination)(types_1.CellState.OPPONENT, cells, size, numInRow))
         return { score: -1, index };
     const emptyCells = (0, exports.listEmptyCellIndexes)(cells);
     if (emptyCells.length === 0)

@@ -63,8 +63,8 @@ io.on('connection', (socket: Socket) => {
 
             case 'quitGame':
                 {
-                    const { gameId } = params as QuitGameClientData['params']
-                    quitGame(gameId, user)
+                    const { gameId, asPlayer } = params as QuitGameClientData['params']
+                    quitGame(gameId, user, asPlayer)
                     callback(null)
                     logger.debug(`${user.uid}:${user.name} Quit Game "${gameId}" successfully`)
 
@@ -112,7 +112,7 @@ io.on('connection', (socket: Socket) => {
 
                     // Broadcast
                     io.emit('server:data', {
-                        type: 'newGameCreated',
+                        type: 'gameCreated',
                         params: { gameId },
                     })
                 }

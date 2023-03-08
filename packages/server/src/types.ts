@@ -17,6 +17,7 @@ export interface QuitGameClientData extends ClientData {
     type: 'quitGame'
     params: {
         gameId: string
+        asPlayer?: boolean
     }
 }
 
