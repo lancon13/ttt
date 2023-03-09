@@ -61,35 +61,36 @@ export const findWinningIndexesCombination = (
     )
 }
 
+export const renderCells = (cells: CellState[], size:number): string => {
+    return Array(size).fill('').map((_v, index)=>{
+        return cells.slice(index * size, (index+1) * size)
+    }).join('\n')
+}
+
 export const getNextMove = ({
     index,
     cells,
     size,
     numInRow,
     isMax,
+    deep = 0
 }: {
     index: number
     cells: CellState[]
     size: number
     numInRow: number
     isMax: boolean
+    deep?: number
 }): { score: number; index: number } => {
-    if (
-        findWinningIndexesCombination(CellState.PLAYER, cells, size, numInRow)
-    )
+    if ( findWinningIndexesCombination(CellState.PLAYER, cells, size, numInRow) )
         return { score: 1, index }
-    else if (
-        findWinningIndexesCombination(
-            CellState.OPPONENT,
-            cells,
-            size,
-            numInRow
-        )
-    )
+    else if (findWinningIndexesCombination( CellState.OPPONENT, cells, size,numInRow))
         return { score: -1, index }
 
     const emptyCells = listEmptyCellIndexes(cells)
-    if (emptyCells.length === 0) return { score: 0, index }
+    if (emptyCells.length === 0 ) return { score: 0, index }
+    if ( deep >= size )
+        return { score: 0, index: emptyCells[Math.floor(Math.random() * emptyCells.length)] }
 
     const clonedCells = [...cells]
     const moves = emptyCells.map((cellIndex) => {
@@ -100,12 +101,13 @@ export const getNextMove = ({
             size,
             numInRow,
             isMax: !isMax,
+            deep: deep+1
         })
         clonedCells[cellIndex] = CellState.EMPTY
         return move
     })
 
-    return moves.reduce(
+    const move = moves.reduce(
         (best, move) => {
             if (isMax ? move.score > best.score : move.score < best.score)
                 return move
@@ -113,4 +115,6 @@ export const getNextMove = ({
         },
         { score: isMax ? -Infinity : Infinity, index: -1 }
     )
+
+    return move
 }

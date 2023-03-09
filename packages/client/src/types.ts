@@ -1,4 +1,4 @@
-import { User } from '@ttt/lib'
+import { Game, GameState, User } from '@ttt/lib'
 
 export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting'
 
@@ -13,10 +13,20 @@ export interface SystemState {
 }
 
 export interface DataState {
-    user: User
+    user: User,
+    game: {
+        gameId: string
+        gameState: GameState,
+        asPlayer: boolean
+    } | undefined
 }
 
 export interface ServerData {
     type: string
     params: { [key: string]: unknown }
 }
+export interface GameData {
+    type: string
+    params: { [key: string]: unknown }
+}
+

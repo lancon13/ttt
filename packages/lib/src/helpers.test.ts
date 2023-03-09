@@ -64,6 +64,7 @@ describe('helpers', () => {
                 ])
             ).toEqual([0, 3, 4])
         })
+
     })
 
     describe('getIndex()', () => {
@@ -83,7 +84,7 @@ describe('helpers', () => {
     })
 
     describe('findWinningIndexesCombination()', () => {
-        it('should find winning indexes combination', () => {
+        it('should find winning indexes combination 3', () => {
             expect(
                 findWinningIndexesCombination(
                     CellState.PLAYER,
@@ -126,8 +127,39 @@ describe('helpers', () => {
         })
     })
 
+    xit('should find winning indexes combination 4', () => {
+        expect(
+            findWinningIndexesCombination(
+                CellState.PLAYER,
+                [
+                    CellState.EMPTY,
+                    CellState.PLAYER,
+                    CellState.PLAYER,
+                    CellState.EMPTY,
+
+                    CellState.EMPTY,
+                    CellState.PLAYER,
+                    CellState.OPPONENT,
+                    CellState.PLAYER,
+
+                    CellState.OPPONENT,
+                    CellState.PLAYER,
+                    CellState.EMPTY,
+                    CellState.EMPTY,
+
+                    CellState.OPPONENT,
+                    CellState.EMPTY,
+                    CellState.EMPTY,
+                    CellState.EMPTY,
+                ],
+                3,
+                3
+            )
+        ).toEqual([1, 4, 7])
+    })
+
     describe('getNextMove()', () => {
-        it('should minmax simulation works as expected', () => {
+        it('should minmax simulation works as expected 3x3', () => {
             const cells = [
                 CellState.EMPTY,
                 CellState.PLAYER,

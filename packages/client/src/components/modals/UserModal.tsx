@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { Button, Form, Input, Modal } from 'react-daisyui'
-import CloseButton from './CloseButton'
+import CloseButton from '../CloseButton'
 
 export interface UserModalProps {
     visible: boolean

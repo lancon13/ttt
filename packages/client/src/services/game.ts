@@ -1,7 +1,7 @@
-import { CellState, GameState, User } from '@ttt/lib'
+import { GameState, Position, User } from '@ttt/lib'
 import { EventEmitter } from 'eventemitter3'
 import { io, Socket } from 'socket.io-client'
-import { ServerData } from '../types'
+import { GameData, ServerData } from '../types'
 
 export const createGameClient = () => {
     const eventEmitter = new EventEmitter()
@@ -36,6 +36,19 @@ export const createGameClient = () => {
                     case 'gameJoined':
                     case 'gameQuitted': {
                         eventEmitter.emit('listGames', await listGames())
+                    }
+                }
+            } catch (error) {
+                eventEmitter.emit('error', error)
+            }
+        })
+        socket.on('game:data', async ({ type, params }: GameData) => {
+            eventEmitter.emit('game:data', { type, params })
+            try {
+                switch (type) {
+                    case 'gameMoved':
+                    {
+                        eventEmitter.emit('refreshGame', { gameState: params.gameState })
                     }
                 }
             } catch (error) {
@@ -155,6 +168,26 @@ export const createGameClient = () => {
         })
     }
 
+    const moveGame = async ({ gameId, position }:{ gameId:string, position:Position}): Promise<GameState> => {
+        return new Promise((resolve, reject) => {
+            if (!socket || !socket.connected) return reject(new Error('Connection is not established yet.'))
+            socket.emit(
+                'client:data',
+                {
+                    type: 'moveGame',
+                    params: {
+                        gameId,
+                        position
+                    },
+                },
+                (error: Error | null, gameState:GameState) => {
+                    if (error) reject(error)
+                    else resolve(gameState)
+                }
+            )
+        })
+    }
+
     return {
         connect,
         disconnect,
@@ -166,5 +199,6 @@ export const createGameClient = () => {
 
         joinGame,
         quitGame,
+        moveGame,
     }
 }

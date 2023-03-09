@@ -1,6 +1,6 @@
 import { FormEvent, useState } from 'react'
 import { Button, Divider, Form, Modal, Range } from 'react-daisyui'
-import CloseButton from './CloseButton'
+import CloseButton from '../CloseButton'
 
 export interface NewGameModalProps {
     visible: boolean

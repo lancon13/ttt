@@ -89,17 +89,16 @@ io.on('connection', (socket: Socket) => {
                     moveGame(gameId, user, position)
                     const gameState = getGame(gameId)
                     callback(null, gameState)
+                    logger.debug(`${user.uid}:${user.name} Moved Game "${gameId}" on Position "${position.x}:${position.y}" successfully`)
 
                     // Game Broadcast
-                    socket.to(gameId).emit('game:data', {
+                    io.to(gameId).emit('game:data', {
                         type: 'gameMoved',
-                        params: {
-                            gameState,
-                        },
+                        params: { gameId, gameState },
                     })
                     io.emit('server:data', {
                         type: 'gameMoved',
-                        params: { gameId },
+                        params: { gameId, gameState },
                     })
                 }
                 return

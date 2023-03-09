@@ -44,7 +44,12 @@ export const findWinningIndexesCombination = (target, cells, size, numInRow) => 
         return ix.every((i) => cells[i] === target);
     });
 };
-export const getNextMove = ({ index, cells, size, numInRow, isMax, }) => {
+export const renderCells = (cells, size) => {
+    return Array(size).fill('').map((_v, index) => {
+        return cells.slice(index * size, (index + 1) * size);
+    }).join('\n');
+};
+export const getNextMove = ({ index, cells, size, numInRow, isMax, deep = 0 }) => {
     if (findWinningIndexesCombination(CellState.PLAYER, cells, size, numInRow))
         return { score: 1, index };
     else if (findWinningIndexesCombination(CellState.OPPONENT, cells, size, numInRow))
@@ -52,6 +57,8 @@ export const getNextMove = ({ index, cells, size, numInRow, isMax, }) => {
     const emptyCells = listEmptyCellIndexes(cells);
     if (emptyCells.length === 0)
         return { score: 0, index };
+    if (deep >= size)
+        return { score: 0, index: emptyCells[Math.floor(Math.random() * emptyCells.length)] };
     const clonedCells = [...cells];
     const moves = emptyCells.map((cellIndex) => {
         clonedCells[cellIndex] = isMax ? CellState.OPPONENT : CellState.PLAYER;
@@ -61,13 +68,15 @@ export const getNextMove = ({ index, cells, size, numInRow, isMax, }) => {
             size,
             numInRow,
             isMax: !isMax,
+            deep: deep + 1
         });
         clonedCells[cellIndex] = CellState.EMPTY;
         return move;
     });
-    return moves.reduce((best, move) => {
+    const move = moves.reduce((best, move) => {
         if (isMax ? move.score > best.score : move.score < best.score)
             return move;
         return best;
     }, { score: isMax ? -Infinity : Infinity, index: -1 });
+    return move;
 };

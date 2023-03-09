@@ -1,4 +1,4 @@
-import { CellState, Game, GameState, Position, User } from '@ttt/lib'
+import { CellState, Game, GameState, getNextMove, getPosition, Position, User } from '@ttt/lib'
 import { v4 as uuid } from 'uuid'
 
 const games = new Map<string, Game>()
@@ -43,9 +43,34 @@ export const quiteGames = (user: User) => {
 
 export const moveGame = (gameId: string, user: User, position: Position) => {
     const game = games.get(gameId)
-    if (game)
-        if (game.player?.uid === user.uid && game.turn === CellState.PLAYER) game.setAt(position, CellState.PLAYER)
-        else if (game.opponent?.uid === user.uid && game.turn === CellState.OPPONENT) game.setAt(position, CellState.OPPONENT)
+    if (game && game.getAt(position) === CellState.EMPTY)
+        if (game.player?.uid === user.uid && game.turn === CellState.PLAYER) {
+            game.setAt(position, CellState.PLAYER)
+            game.turn = CellState.OPPONENT
+            if ( !game.opponent) {
+                const nextMove = getNextMove({
+                    index: -1,
+                    cells: game.cells,
+                    size: game.size,
+                    numInRow: game.numInRow,
+                    isMax: false,
+                })
+                game.setAt(getPosition(game.size, nextMove.index), CellState.OPPONENT)
+            }
+        } else if (game.opponent?.uid === user.uid && game.turn === CellState.OPPONENT) {
+            game.setAt(position, CellState.OPPONENT)
+            game.turn = CellState.PLAYER
+            if ( !game.opponent) {
+                const nextMove = getNextMove({
+                    index: -1,
+                    cells: game.cells,
+                    size: game.size,
+                    numInRow: game.numInRow,
+                    isMax: true,
+                })
+                game.setAt(getPosition(game.size, nextMove.index), CellState.PLAYER)
+            }
+        }
 }
 
 export const newGame = ({ size, numInRow }: { size: number; numInRow: number }): string => {

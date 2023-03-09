@@ -1,4 +1,4 @@
-import { Game, GameState } from '@ttt/lib'
+import { CellState, Game, GameState, Position } from '@ttt/lib'
 import { useEffect, useState } from 'react'
 import { Card } from 'react-daisyui'
 import EmptyGameList from './components/EmptyGameList'
@@ -6,9 +6,9 @@ import Footer from './components/Footer'
 import GameCard from './components/GameCard'
 import Header from './components/Header'
 import Hero from './components/Hero'
-import NewGameModal from './components/NewGameModal'
-import PlayGameModal from './components/PlayGameModal'
-import UserModal from './components/UserModal'
+import NewGameModal from './components/modals/NewGameModal'
+import PlayGameModal from './components/modals/PlayGameModal'
+import UserModal from './components/modals/UserModal'
 import { createGameClient, useData } from './services'
 import { SystemState } from './types'
 
@@ -27,13 +27,28 @@ const App = () => {
         newGameModalVisible: false,
     })
     const [games, setGames] = useState<{ gameId: string; game: Game }[]>([])
-    const [currentGame, setCurrentGame] = useState<{ gameId: string; game: Game; asPlayer: boolean } | undefined>(undefined)
 
     // Socket connection
     useEffect(() => {
         game.connect(dataState.user)
         game.eventEmitter.on('connect', () => {
             setSystemState({ ...systemState, connectionStatus: 'connected' })
+
+            // First connect
+            if (dataState.game && dataState.game.gameId) {
+                const fetchData = async () => {
+                    const gameId = dataState.game?.gameId as string
+                    const asPlayer = dataState.game?.asPlayer as boolean
+                    const gameState = await game.getGame(gameId)
+                    if (!gameState)
+                        throw new Error('Game state not found')
+                    setDataState({ ...dataState, game: { gameId, gameState, asPlayer } })
+                    await game.joinGame({ gameId, asPlayer })
+                }
+                fetchData().catch(() => {
+                    setDataState({ ...dataState, game: undefined })
+                })
+            }
         })
         game.eventEmitter.on('disconnect', () => {
             setSystemState({ ...systemState, connectionStatus: 'disconnected' })
@@ -48,6 +63,13 @@ const App = () => {
                 })
             )
         })
+        game.eventEmitter.on('refreshGame', ({ gameState }:{ gameState: GameState }) => {
+            const game = dataState.game ? { ...dataState.game } : undefined
+            if( game ) {
+                game.gameState = gameState
+                setDataState({ ...dataState, game: { ...game } })
+            }
+        })
         game.eventEmitter.on('error', (error: Error) => {
             console.error(error)
         })
@@ -55,7 +77,7 @@ const App = () => {
         return () => {
             game.disconnect()
         }
-    }, [dataState])
+    }, [dataState.user])
 
     // Event handlers
     const onStartClick = () => {
@@ -84,7 +106,7 @@ const App = () => {
         try {
             const gameId = await game.newGame({ size, numInRow })
             const gameState = await game.joinGame({ gameId, asPlayer: true })
-            setCurrentGame({ gameId, game: Game.import(gameState), asPlayer: true })
+            setDataState({ ...dataState, game: { gameId, gameState, asPlayer: true } })
             setSystemState({ ...systemState, newGameModalVisible: false })
         } catch (error) {
             game.eventEmitter.emit('error', error)
@@ -92,19 +114,25 @@ const App = () => {
     }
     const onQuitGameSubmit = async () => {
         try {
-            if (currentGame) await game.quitGame({ gameId: currentGame?.gameId || '', asPlayer: currentGame?.asPlayer })
-            setCurrentGame(undefined)
+            if (dataState.game) await game.quitGame({ gameId: dataState.game?.gameId || '', asPlayer: dataState.game?.asPlayer })
+            setDataState({ ...dataState, game: undefined })
         } catch (error) {
             game.eventEmitter.emit('error', error)
         }
     }
     const onJoinAsPlayerButtonClick = async (gameId: string) => {
         const gameState = await game.joinGame({ gameId, asPlayer: true })
-        setCurrentGame({ gameId, game: Game.import(gameState), asPlayer: true })
+        setDataState({ ...dataState, game: { gameId, gameState, asPlayer: true } })
     }
     const onJoinAsOpponentButtonClick = async (gameId: string) => {
         const gameState = await game.joinGame({ gameId, asPlayer: false })
-        setCurrentGame({ gameId, game: Game.import(gameState), asPlayer: false })
+        setDataState({ ...dataState, game: { gameId, gameState, asPlayer: false } })
+    }
+    const onPositionClick = async (position: Position) => {
+        if ( dataState.game && dataState.game.gameState.turn === (dataState.game.asPlayer ? CellState.PLAYER : CellState.OPPONENT) ) {
+            const gameState = await game.moveGame({ gameId: dataState.game?.gameId, position })
+            setDataState({ ...dataState, game: { gameId:dataState.game?.gameId, gameState, asPlayer: dataState.game?.asPlayer } })
+        }
     }
 
     return (
@@ -147,7 +175,7 @@ const App = () => {
                     onCreateNewGameSubmit={onCreateNewGameSubmit}
                 ></NewGameModal>
 
-                <PlayGameModal game={currentGame} onQuitGameSubmit={onQuitGameSubmit}></PlayGameModal>
+                <PlayGameModal game={dataState.game} onQuitGameSubmit={onQuitGameSubmit} onPositionClick={onPositionClick}></PlayGameModal>
 
                 {games.length === 0 ? (
                     <EmptyGameList></EmptyGameList>

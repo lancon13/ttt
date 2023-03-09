@@ -9,7 +9,8 @@ export const useData = () => {
             user: {
                 uid: uuid(),
                 name: ''
-            }
+            },
+            currentGame: undefined
         },
         {
             serializer: (obj: unknown) => {

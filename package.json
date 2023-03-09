@@ -6,7 +6,9 @@
     "license": "MIT",
     "private": true,
     "scripts": {
-        "test": "jest"
+        "dev:client": "yarn workspace @ttt/client dev",
+        "dev:server": "yarn workspace @ttt/server dev",
+        "dev": "npm-run-all --parallel dev:client dev:server"
     },
     "workspaces": [
         "packages/*"
