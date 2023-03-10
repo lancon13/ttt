@@ -1,2 +1,2 @@
-export * from './game'
+export * from './connection'
 export * from './data'

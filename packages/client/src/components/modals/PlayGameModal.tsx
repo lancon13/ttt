@@ -1,4 +1,4 @@
-import { Game, GameState, Position } from '@ttt/lib'
+import { CellState, Game, GameState, Position } from '@ttt/lib'
 import { useEffect, useState } from 'react'
 import { Button, Modal } from 'react-daisyui'
 import GameRenderer from '../GameRenderer'
@@ -32,6 +32,7 @@ const PlayGameModal = ({ game, onQuitGameSubmit, onPositionClick }: PlayGameModa
                         Size {gameInstance?.size} x {gameInstance?.size}
                     </div>
                     <div>{gameInstance?.numInRow} in a row</div>
+                    <div>{gameInstance?._turn === CellState.PLAYER ? 'PLAYER TURN' : 'OPPONENT TURN' }</div>
                 </div>
                 <div className="self-center">{gameInstance ? <GameRenderer gameInstance={gameInstance} onPositionClick={onPositionClick}></GameRenderer> : ''}</div>
             </Modal.Body>

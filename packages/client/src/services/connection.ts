@@ -14,6 +14,7 @@ export const createGameClient = () => {
             query: {
                 user: JSON.stringify(user),
             },
+            forceNew: false
         })
         socket.on('connect', async (...args) => {
             eventEmitter.emit('connect', ...args)
@@ -59,7 +60,6 @@ export const createGameClient = () => {
 
     const disconnect = () => {
         if (socket) {
-            eventEmitter.removeAllListeners()
             socket.off()
             socket.close()
         }
@@ -131,6 +131,8 @@ export const createGameClient = () => {
     const joinGame = async ({ gameId, asPlayer }: { gameId: string; asPlayer: boolean }): Promise<GameState> => {
         return new Promise((resolve, reject) => {
             if (!socket || !socket.connected) return reject(new Error('Connection is not established yet.'))
+            console.log('join')
+
             socket.emit(
                 'client:data',
                 {

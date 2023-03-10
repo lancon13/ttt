@@ -1,6 +1,6 @@
 import useLocalStorage from 'use-local-storage'
-import { DataState } from '../types'
 import { v4 as uuid } from 'uuid'
+import { DataState } from '../types'
 
 export const useData = () => {
     return useLocalStorage<DataState>(
@@ -10,7 +10,7 @@ export const useData = () => {
                 uid: uuid(),
                 name: ''
             },
-            currentGame: undefined
+            game: undefined
         },
         {
             serializer: (obj: unknown) => {

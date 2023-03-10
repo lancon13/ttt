@@ -1,6 +1,8 @@
-import { FormEvent, useState } from 'react'
+import { Game } from '@ttt/lib'
+import { FormEvent, useEffect, useState } from 'react'
 import { Button, Divider, Form, Modal, Range } from 'react-daisyui'
 import CloseButton from '../CloseButton'
+import GameRenderer from '../GameRenderer'
 
 export interface NewGameModalProps {
     visible: boolean
@@ -11,11 +13,16 @@ export interface NewGameModalProps {
 const NewGameModal = ({ visible, onVisibleChange, onCreateNewGameSubmit }: NewGameModalProps) => {
     const [currentSize, setCurrentSize] = useState(3)
     const [currentNumInRow, setCurrentNumInRow] = useState(3)
+    const [newGame, setNewGame] = useState(new Game())
 
     const onSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         onCreateNewGameSubmit({ size: currentSize, numInRow: currentNumInRow })
     }
+
+    useEffect(()=>{
+        setNewGame(new Game({ size: currentSize, numInRow: currentNumInRow }))
+    }, [currentSize, currentNumInRow])
 
     return (
         <Modal open={visible}>
@@ -26,11 +33,9 @@ const NewGameModal = ({ visible, onVisibleChange, onCreateNewGameSubmit }: NewGa
 
             <Form onSubmit={onSubmit}>
                 <Modal.Body>
-                    <div className="flex items-top">
-                        <div className="">
-                            <svg width="150" height="150">
-                                <rect width="150" height="150" />
-                            </svg>
+                    <div className="flex items-center">
+                        <div className="w-24">
+                            <GameRenderer gameInstance={newGame}></GameRenderer>
                         </div>
                         <div className="grow px-3">
                             <Form.Label title="Size">{currentSize}</Form.Label>

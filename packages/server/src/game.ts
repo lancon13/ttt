@@ -43,7 +43,7 @@ export const quiteGames = (user: User) => {
 
 export const moveGame = (gameId: string, user: User, position: Position) => {
     const game = games.get(gameId)
-    if (game && game.getAt(position) === CellState.EMPTY)
+    if (game && game.getAt(position) === CellState.EMPTY) {
         if (game.player?.uid === user.uid && game.turn === CellState.PLAYER) {
             game.setAt(position, CellState.PLAYER)
             game.turn = CellState.OPPONENT
@@ -56,6 +56,7 @@ export const moveGame = (gameId: string, user: User, position: Position) => {
                     isMax: false,
                 })
                 game.setAt(getPosition(game.size, nextMove.index), CellState.OPPONENT)
+                game.turn = CellState.PLAYER
             }
         } else if (game.opponent?.uid === user.uid && game.turn === CellState.OPPONENT) {
             game.setAt(position, CellState.OPPONENT)
@@ -69,8 +70,15 @@ export const moveGame = (gameId: string, user: User, position: Position) => {
                     isMax: true,
                 })
                 game.setAt(getPosition(game.size, nextMove.index), CellState.PLAYER)
+                game.turn = CellState.OPPONENT
             }
         }
+
+
+        console.log(gameId, game.export())
+        games.set(gameId, game)
+    }
+
 }
 
 export const newGame = ({ size, numInRow }: { size: number; numInRow: number }): string => {

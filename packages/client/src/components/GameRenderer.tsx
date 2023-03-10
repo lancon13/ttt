@@ -1,4 +1,4 @@
-import { CellState, Game, getPosition, Position } from '@ttt/lib'
+import { CellState, findWinningIndexesCombination, Game, getPosition, Position } from '@ttt/lib'
 import { useEffect, useRef, MouseEvent } from 'react'
 
 export interface GameRendererProps {
@@ -43,6 +43,15 @@ const GameRenderer = ({ gameInstance, onPositionClick }: GameRendererProps) => {
 
             ctx.restore()
         })
+
+        // Determine the win
+        const playerWins = findWinningIndexesCombination(CellState.PLAYER, gameInstance.cells, gameInstance.size, gameInstance.numInRow)
+        if ( playerWins )
+            console.log(playerWins)
+        const opponentWins = findWinningIndexesCombination(CellState.OPPONENT, gameInstance.cells, gameInstance.size, gameInstance.numInRow)
+        if ( opponentWins )
+            console.log(opponentWins)
+
     }
     useEffect(() => {
         const canvas = canvasRef.current

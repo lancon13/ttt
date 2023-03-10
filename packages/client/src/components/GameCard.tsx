@@ -1,5 +1,6 @@
 import { Game } from '@ttt/lib'
 import { Button, Card } from 'react-daisyui'
+import GameRenderer from './GameRenderer'
 
 export interface GameCardProps {
     gameId: string
@@ -9,6 +10,7 @@ export interface GameCardProps {
 }
 
 const GameCard = ({ gameId, game, onJoinAsPlayerButtonClick, onJoinAsOpponentButtonClick }: GameCardProps) => {
+
     return (
         <Card className="bg-base-200 mb-6 drop-shadow-md" side="md">
             <Card.Body>
@@ -16,6 +18,9 @@ const GameCard = ({ gameId, game, onJoinAsPlayerButtonClick, onJoinAsOpponentBut
                 <p>
                     Size {game.size} x {game.size}
                 </p>
+                <div className='w-24'>
+                    <GameRenderer gameInstance={game}></GameRenderer>
+                </div>
                 <Card.Actions className="justify-end">
                     <Button
                         color={game.player ? 'success' : 'primary'}
