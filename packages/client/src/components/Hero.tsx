@@ -1,23 +1,25 @@
-import React from 'react'
+import { Button } from '@mui/material'
 
 export interface HeroProps {
-    onStartClick: () => void
+    handleNewGameButtonClick: () => void
 }
 
-const Hero = ({ onStartClick }: HeroProps) => {
+const Hero = ({ handleNewGameButtonClick }: HeroProps) => {
     return (
-        <div className="hero bg-base-200">
-            <div className="hero-content text-center">
-                <div className="max-w-md flex flex-col items-center">
-                    <h1 className="text-5xl font-bold">Tic Tac Toe</h1>
-                    <p className="py-6">Multiplayer Game - Tic Tac Toe. Please start a new game or join any existing game listed below</p>
-                    <img src="icons/ttt.svg" style={{ width: '5rem', margin: '1rem' }} />
-                    <button className="btn btn-primary" onClick={onStartClick}>
-                        New Game
-                    </button>
+        <section className="body-font bg-gradient-to-r from-cyan-100 to-blue-500">
+            <div className="container mx-auto flex px-5 py-24 md:flex-row flex-col items-center max-w-5xl">
+                <div className="lg:flex-grow md:w-1/2 lg:pr-24 md:pr-16 flex flex-col md:text-left mb-16 md:mb-0 text-center">
+                    <h1 className="title-font font-bold text-4xl mb-4">Tic Tac Toe</h1>
+                    <p className="mb-8 leading-relaxed">This is a multi-player game written in Typescript with server / client support.</p>
+                    <div className='flex flex-col items-center md:flex-row'>
+                        <Button onClick={handleNewGameButtonClick} color='primary' variant="contained">New Game</Button>
+                    </div>
+                </div>
+                <div className="lg:max-w-md md:w-1/3 w-3/6">
+                    <img className="object-cover object-center rounded bg-transparent" src="bg.jpg" />
                 </div>
             </div>
-        </div>
+        </section>
     )
 }
 export default Hero

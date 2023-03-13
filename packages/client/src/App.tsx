@@ -1,202 +1,178 @@
-import { CellState, Game, GameState, Position } from '@ttt/lib'
+import { Game, GameState, Position } from '@ttt/lib'
 import { useEffect, useState } from 'react'
-import EmptyGameList from './components/EmptyGameList'
-import Footer from './components/Footer'
-import GameCard from './components/GameCard'
+import EmptyGameItem from './components/EmptyGameItem'
+import GameItem from './components/GameItem'
+import GameView from './components/GameView'
 import Header from './components/Header'
 import Hero from './components/Hero'
-import NewGameModal from './components/modals/NewGameModal'
-import PlayGameModal from './components/modals/PlayGameModal'
+import GameModal from './components/modals/GameModal'
 import UserModal from './components/modals/UserModal'
-import { createGameClient, useData } from './services'
-import { SystemState } from './types'
+import { createConnection, useData } from './services'
+import { useSystem } from './services/system'
 
-
+const connection = createConnection()
 const App = () => {
-    // Data
+
     const [dataState, setDataState] = useData()
-    const [systemState, setSystemState] = useState<SystemState>({
-        isStartingNewGame: false,
-        isLoading: false,
+    const [systemData, setSystemData] = useSystem()
 
-        connectionStatus: 'disconnected',
+    const [games, setGames] = useState<{gameId:string, game:Game}[]>([])
+    const showError = (error:Error) => {
+        console.error(error)
+    }
 
-        userModalVisible: false,
-        newGameModalVisible: false,
-    })
-    const [games, setGames] = useState<{ gameId: string; game: Game }[]>([])
-    const [connection] = useState(createGameClient())
-
-    // Socket connection
     useEffect(() => {
-        connection.connect(dataState.user)
+        const run = async () => {
+            await connection.connect(dataState.user)
+            const games = await connection.listGames()
+            const currentGames = games.map(g => ({ gameId:g.gameId, game: Game.import(g.gameState) }))
+            currentGames.reverse()
+            setGames(currentGames)
+        }
+        run().catch((error:Error)=>{
+            showError(error)
+        })
+
         return () => {
-            connection.disconnect()
+            connection.disconnect().catch((error:Error)=>{
+                showError(error)
+            })
         }
     }, [dataState.user])
 
-    // Event emitted handlers
-    connection.eventEmitter.on('connect', () => {
-        setSystemState({ ...systemState, connectionStatus: 'connected' })
+    connection.eventEmitter.on('connect', ()=>{
+        setSystemData({ ...systemData, connectionStatus:'connected' })
+    })
+    connection.eventEmitter.on('disconnect', ()=>{
+        setSystemData({ ...systemData, connectionStatus:'disconnected' })
+    })
+    connection.eventEmitter.on('error', (error:Error)=>{
+        showError(error as Error)
+    })
 
-        // First connect
-        if (dataState.game && dataState.game.gameId) {
-            const fetchData = async () => {
-                const gameId = dataState.game?.gameId as string
-                const asPlayer = dataState.game?.asPlayer as boolean
-                const gameState = await connection.getGame(gameId)
-                if (!gameState)
-                    throw new Error('Game state not found')
-                await connection.joinGame({ gameId, asPlayer })
-                return { gameId, gameState, asPlayer }
+    connection.eventEmitter.on('listGames', (games:{gameId:string, gameState:GameState}[])=>{
+        const currentGames = games.map(g => ({ gameId:g.gameId, game: Game.import(g.gameState) }))
+        currentGames.reverse()
+        setGames(currentGames)
+    })
+
+    const newGame = async () =>{
+        try {
+            const { gameId } = await connection.newGame(3, 3)
+            await joinGame(gameId, true)
+            setDataState({ ...dataState, gameId: gameId })
+        } catch(error) {
+            showError(error as Error)
+        }
+    }
+    const joinGame = async (gameId:string, asPlayer:boolean) => {
+        try {
+            connection.joinGame(gameId, asPlayer)
+            setDataState({ ...dataState, gameId: gameId })
+        } catch(error) {
+            showError(error as Error)
+        }
+    }
+    const quitGame = async (gameId:string, asPlayer:boolean) => {
+        try {
+            connection.quitGame(gameId, asPlayer)
+            setDataState({ ...dataState, gameId: undefined })
+        } catch(error) {
+            showError(error as Error)
+        }
+    }
+    const quitCurrentGame = async () => {
+        try {
+            const currentGameId = getCurrentGameId() || ''
+            const currentGame = getCurrentGame()
+            if( currentGameId !== '' && currentGame) {
+                const asPlayer = currentGame.player?.uid === dataState.user.uid
+                await quitGame(currentGameId, asPlayer)
             }
-            fetchData().then(( { gameId, gameState, asPlayer })=>{
-                setDataState({ ...dataState, game: { gameId, gameState, asPlayer } })
+        } catch(error) {
+            showError(error as Error)
+        }
+    }
+    const moveCurrentGame = async (pos:Position) => {
+        try {
+            const currentGameId = getCurrentGameId() || ''
+            const currentGame = getCurrentGame()
+            if( currentGameId !== '' && currentGame) {
+                const asPlayer = currentGame.player?.uid === dataState.user.uid
+                await connection.moveGame(currentGameId, pos, asPlayer)
+            }
+        } catch(error) {
+            showError(error as Error)
+        }
+    }
 
-            }).catch(() => {
-                setDataState({ ...dataState, game: undefined })
-            })
-        }
-    })
-    connection.eventEmitter.on('disconnect', () => {
-        setSystemState({ ...systemState, connectionStatus: 'disconnected' })
-    })
-    connection.eventEmitter.on('listGames', (games: Map<string, GameState>) => {
-        setGames(
-            Array.from(games, ([gameId, gameState]) => {
-                return {
-                    gameId,
-                    game: Game.import(gameState),
-                }
-            })
-        )
-    })
-    connection.eventEmitter.on('refreshGame', ({ gameState }:{ gameState: GameState }) => {
-        const game = dataState.game ? { ...dataState.game } : undefined
-        if( game ) {
-            game.gameState = { ...gameState }
-            setDataState({ ...dataState, game: { ...game } })
-        }
-    })
-    connection.eventEmitter.on('error', (error: Error) => {
-        console.error(error)
-    })
+    const getCurrentGameId = ():string|undefined => {
+        return dataState.gameId
+    }
+    const getCurrentGame = ():Game|undefined => {
+        return games.find(g => g.gameId === dataState.gameId)?.game
+    }
+    // const isGameJoined = (gameId:string, asPlayer:boolean):boolean => {
+    //     return !!games.find(g => g.gameId === gameId && ((asPlayer && g.game.player?.uid == dataState.user.uid) || (!asPlayer && g.game.opponent?.uid === dataState.user.uid)) )
+    // }
+
 
     // Event handlers
-    const onStartClick = () => {
-        systemState.isStartingNewGame = true
-        if (dataState.user.name.trim() === '') systemState.userModalVisible = true
-        else systemState.newGameModalVisible = true
-        setSystemState({ ...systemState })
+    const handleHeaderUserNameButtonClick = () =>{
+        setSystemData({ ...systemData, isUserModalEnabled: true })
     }
-    const onAvatarButtonClick = () => {
-        setSystemState({
-            ...systemState,
-            isStartingNewGame: false,
-            userModalVisible: true,
-        })
+    const handleNewGameButtonClick = () => {
+        newGame()
     }
-    const onUserNameChange = (userName: string) => {
-        setDataState({ ...dataState, user: { ...dataState.user, name: userName } })
-        setSystemState({
-            ...systemState,
-            isStartingNewGame: false,
-            userModalVisible: false,
-            newGameModalVisible: systemState.isStartingNewGame,
-        })
+    const handleUserNameChange = (userName:string) => {
+        setDataState({ ...dataState, user:{ uid:dataState.user.uid, name:userName } })
     }
-    const onCreateNewGameSubmit = async ({ size, numInRow }: { size: number; numInRow: number }) => {
-        try {
-            const gameId = await connection.newGame({ size, numInRow })
-            const gameState = await connection.joinGame({ gameId, asPlayer: true })
-            setDataState({ ...dataState, game: { gameId, gameState, asPlayer: true } })
-            setSystemState({ ...systemState, newGameModalVisible: false })
-        } catch (error) {
-            connection.eventEmitter.emit('error', error)
-        }
+    const handleUserNameModalCloseButtonClick= () =>{
+        setSystemData({ ...systemData, isUserModalEnabled: false })
     }
-    const onQuitGameSubmit = async () => {
-        try {
-            if (dataState.game) await connection.quitGame({ gameId: dataState.game?.gameId || '', asPlayer: dataState.game?.asPlayer })
-            setDataState({ ...dataState, game: undefined })
-        } catch (error) {
-            connection.eventEmitter.emit('error', error)
-        }
+    const handleGameModalCloseButtonClick = () => {
+        quitCurrentGame()
     }
-    const onJoinAsPlayerButtonClick = async (gameId: string) => {
-        const gameState = await connection.joinGame({ gameId, asPlayer: true })
-        setDataState({ ...dataState, game: { gameId, gameState, asPlayer: true } })
+    const handleGameModalQuitButtonClick = () => {
+        quitCurrentGame()
     }
-    const onJoinAsOpponentButtonClick = async (gameId: string) => {
-        const gameState = await connection.joinGame({ gameId, asPlayer: false })
-        setDataState({ ...dataState, game: { gameId, gameState, asPlayer: false } })
+    const handleJoinGameAsPlayerButtonClick = (gameId:string) => {
+        joinGame(gameId, true)
     }
-    const onPositionClick = async (position: Position) => {
-        if ( dataState.game && dataState.game.gameState.turn === (dataState.game.asPlayer ? CellState.PLAYER : CellState.OPPONENT) ) {
-            const gameState = await connection.moveGame({ gameId: dataState.game?.gameId, position })
-            setDataState({ ...dataState, game: { gameId:dataState.game?.gameId, gameState, asPlayer: dataState.game?.asPlayer } })
-        }
+    const handleJoinGameAsOpponentButtonClick = (gameId:string) => {
+        joinGame(gameId, false)
+    }
+    const handleGameModalPositionChange = (pos:Position) => {
+        moveCurrentGame(pos)
     }
 
     return (
-        <div className="App flex flex-col min-h-screen">
-            {dataState.user.name.trim() !== '' ? (
-                <Header
-                    userName={dataState.user.name}
-                    connectionStatus={systemState.connectionStatus}
-                    onAvatarButtonClick={onAvatarButtonClick}
-                ></Header>
-            ) : (
-                ''
-            )}
+        <div className="flex flex-col">
+            <UserModal userName={dataState.user.name} visible={systemData.isUserModalEnabled} handleUserNameChange={(userName:string) => {
+                handleUserNameChange(userName)
+                handleUserNameModalCloseButtonClick()
+            }} handleCloseButtonClick={handleUserNameModalCloseButtonClick} ></UserModal>
+            {
+                <GameModal user={dataState.user} game={getCurrentGame()} handleCloseButtonClick={handleGameModalCloseButtonClick} handleQuitGameButtonClick={handleGameModalQuitButtonClick} handlePositionChange={handleGameModalPositionChange}></GameModal>
+            }
 
-            <Hero onStartClick={onStartClick}></Hero>
-            <div className="grow p-6">
-                {/* <Alert></Alert> */}
+            <Header userName={dataState.user.name} connectionStatus={'connected'} handleUserNameButtonClick={handleHeaderUserNameButtonClick}></Header>
+            <Hero handleNewGameButtonClick={handleNewGameButtonClick} ></Hero>
 
-                <UserModal
-                    visible={systemState.userModalVisible}
-                    userName={dataState.user.name}
-                    onVisibleChange={(visible: boolean) =>
-                        setSystemState({
-                            ...systemState,
-                            isStartingNewGame: false,
-                            userModalVisible: visible,
+            <section className='bg-gradient-to-t from-gray-900 to-gray-70 py-6'>
+                <div className='flex flex-col p-6 mx-auto max-w-5xl '>
+                    {
+                        games.length === 0 ?<EmptyGameItem handleNewGameButtonClick={handleNewGameButtonClick}></EmptyGameItem>:games.map(({ gameId, game })=>{
+                            return (
+                                <GameItem key={gameId} game={game} gameId={gameId} handleJoinGameAsPlayerButtonClick={() => handleJoinGameAsPlayerButtonClick(gameId)} handleJoinGameAsOpponentButtonClick={() => handleJoinGameAsOpponentButtonClick(gameId)}  >
+                                    <GameView game={game}></GameView>
+                                </GameItem>
+                            )
                         })
                     }
-                    onUserNameChange={onUserNameChange}
-                ></UserModal>
 
-                <NewGameModal
-                    visible={systemState.newGameModalVisible}
-                    onVisibleChange={(visible: boolean) =>
-                        setSystemState({
-                            ...systemState,
-                            newGameModalVisible: visible,
-                        })
-                    }
-                    onCreateNewGameSubmit={onCreateNewGameSubmit}
-                ></NewGameModal>
-
-                <PlayGameModal game={dataState.game} onQuitGameSubmit={onQuitGameSubmit} onPositionClick={onPositionClick}></PlayGameModal>
-
-                {games.length === 0 ? (
-                    <EmptyGameList></EmptyGameList>
-                ) : (
-                    games.map(({ gameId, game }) => {
-                        return (
-                            <GameCard
-                                key={gameId}
-                                gameId={gameId}
-                                game={game}
-                                onJoinAsOpponentButtonClick={() => onJoinAsOpponentButtonClick(gameId)}
-                                onJoinAsPlayerButtonClick={() => onJoinAsPlayerButtonClick(gameId)}
-                            ></GameCard>
-                        )
-                    })
-                )}
-            </div>
-            <Footer></Footer>
+                </div>
+            </section>
         </div>
     )
 }

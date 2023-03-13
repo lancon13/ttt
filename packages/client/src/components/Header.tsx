@@ -1,17 +1,34 @@
+import { library } from '@fortawesome/fontawesome-svg-core'
+import { faUser } from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { Avatar, Badge, Button, IconButton } from '@mui/material'
 import { ConnectionStatus } from '../types'
-import AvatarButton from './AvatarButton'
+
+library.add(faUser)
 
 export interface HeaderProps {
     userName: string
     connectionStatus: ConnectionStatus
-    onAvatarButtonClick: () => void
+    handleUserNameButtonClick: () => void
 }
 
-const Header = ({ userName, onAvatarButtonClick, connectionStatus }: HeaderProps) => {
+const Header = ({ userName, handleUserNameButtonClick, connectionStatus }: HeaderProps) => {
     return (
-        <header className="flex items-center p-3 w-full absolute">
-            <div className="grow text-right">
-                <AvatarButton userName={userName} connectionStatus={connectionStatus} onClick={onAvatarButtonClick}></AvatarButton>
+        <header className="body-font p-3 bg-black text-white">
+            <div className="flex justify-between">
+                <div></div>
+                <div>
+                    <Button onClick={handleUserNameButtonClick} sx={{ textTransform: 'none' }}>
+                        <span>{userName.trim() !== '' ? userName : 'Welcome'}</span>
+                    </Button>
+                    <IconButton>
+                        <Badge badgeContent=" " color={connectionStatus === 'connected' ? 'success' : 'error'}>
+                            <Avatar>
+                                <FontAwesomeIcon icon={faUser} />
+                            </Avatar>
+                        </Badge>
+                    </IconButton>
+                </div>
             </div>
         </header>
     )

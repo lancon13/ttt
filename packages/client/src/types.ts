@@ -1,32 +1,19 @@
-import { Game, GameState, User } from '@ttt/lib'
+import { GameState, User } from '@ttt/lib'
 
-export type ConnectionStatus = 'connected' | 'disconnected' | 'connecting'
+export type ConnectionStatus = 'connected' | 'disconnected'
 
 export interface SystemState {
-    isStartingNewGame: boolean
-    isLoading: boolean
-
     connectionStatus: ConnectionStatus
 
-    userModalVisible: boolean
-    newGameModalVisible: boolean
+    isUserModalEnabled: boolean
 }
 
 export interface DataState {
     user: User,
-    game: {
-        gameId: string
-        gameState: GameState,
-        asPlayer: boolean
-    } | undefined
+    gameId: string | undefined
 }
 
 export interface ServerData {
     type: string
     params: { [key: string]: unknown }
 }
-export interface GameData {
-    type: string
-    params: { [key: string]: unknown }
-}
-

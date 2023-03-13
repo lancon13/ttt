@@ -15,6 +15,8 @@ const app = express()
 const server = createServer(app)
 const io = new SocketIO(server, {
     path: '/ttt-socket',
+    allowUpgrades: true,
+
 })
 const port = process.env.PORT || 3000
 
@@ -53,7 +55,6 @@ io.on('connection', (socket: Socket) => {
                     logger.debug(`${user.uid}:${user.name} Join Game "${gameId}" as ${asPlayer ? 'PLAYER' : 'OPPONENT'} successfully`)
 
                     // Game Broadcast
-                    socket.join(gameId)
                     io.emit('server:data', {
                         type: 'gameJoined',
                         params: { gameId },
@@ -69,7 +70,6 @@ io.on('connection', (socket: Socket) => {
                     logger.debug(`${user.uid}:${user.name} Quit Game "${gameId}" successfully`)
 
                     // Broadcast
-                    socket.leave(gameId)
                     io.emit('server:data', {
                         type: 'gameQuitted',
                         params: { gameId },
@@ -92,10 +92,6 @@ io.on('connection', (socket: Socket) => {
                     logger.debug(`${user.uid}:${user.name} Moved Game "${gameId}" on Position "${position.x}:${position.y}" successfully`)
 
                     // Game Broadcast
-                    io.to(gameId).emit('game:data', {
-                        type: 'gameMoved',
-                        params: { gameId, gameState },
-                    })
                     io.emit('server:data', {
                         type: 'gameMoved',
                         params: { gameId, gameState },
@@ -106,13 +102,14 @@ io.on('connection', (socket: Socket) => {
             case 'newGame':
                 {
                     const gameId = newGame(params as NewGameClientData['params'])
-                    callback(null, gameId)
+                    const gameState = getGame(gameId)
+                    callback(null, { gameId, gameState })
                     logger.debug(`New Game "${gameId}" created successfully`)
 
                     // Broadcast
                     io.emit('server:data', {
                         type: 'gameCreated',
-                        params: { gameId },
+                        params: { gameId, gameState },
                     })
                 }
                 return

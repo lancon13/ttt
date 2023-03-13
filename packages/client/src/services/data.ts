@@ -10,7 +10,7 @@ export const useData = () => {
                 uid: uuid(),
                 name: ''
             },
-            game: undefined
+            gameId: undefined
         },
         {
             serializer: (obj: unknown) => {
